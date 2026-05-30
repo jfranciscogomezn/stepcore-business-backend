@@ -69,6 +69,15 @@ Obtain a JWT from the security service (`POST http://localhost:8080/api/v1/auth/
 | `POST` | `/api/v1/config/holidays` | ADMIN |
 | `DELETE` | `/api/v1/config/holidays/{id}` | ADMIN |
 
+## API (employee configuration)
+
+| Method | Path | Role |
+|--------|------|------|
+| `POST` | `/api/v1/employees` | ADMIN |
+| `GET` | `/api/v1/employees` | ADMIN |
+| `GET` | `/api/v1/employees/{id}` | ADMIN |
+| `PUT` | `/api/v1/employees/{id}` | ADMIN |
+
 ---
 
 ## Tests

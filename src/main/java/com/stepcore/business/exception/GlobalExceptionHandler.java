@@ -32,15 +32,17 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, "Access denied", request);
     }
 
-    @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class})
+    @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class,
+                        EmployeeNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateHolidayException.class)
+    @ExceptionHandler({DuplicateHolidayException.class, DuplicateEmployeeDocumentException.class,
+                        DuplicateEmployeeEmailException.class})
     public ResponseEntity<ErrorResponse> handleConflict(
-            final DuplicateHolidayException ex, final HttpServletRequest request) {
+            final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
