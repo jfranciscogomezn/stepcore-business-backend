@@ -18,7 +18,8 @@ spring:
     password: ${DB_PASSWORD:gmm_pass}
     locations: classpath:db/migration
     table: flyway_schema_history_business
-    baseline-on-migrate: false
+    baseline-on-migrate: true
+    baseline-version: 0
 
 server:
   port: ${PORT:8081}

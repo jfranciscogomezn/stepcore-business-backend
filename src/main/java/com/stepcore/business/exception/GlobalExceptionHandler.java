@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             final AccessDeniedException ex, final HttpServletRequest request) {
-        return buildResponse(HttpStatus.FORBIDDEN, "Access denied", request);
+        return buildResponse(HttpStatus.FORBIDDEN, "Access denied: insufficient permissions for this operation", request);
     }
 
     @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class,

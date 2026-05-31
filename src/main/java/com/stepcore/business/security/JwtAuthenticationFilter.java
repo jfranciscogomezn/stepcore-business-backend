@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -52,9 +53,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     TenantContext.setTenantId(tenantId);
                 }
 
-                final List<SimpleGrantedAuthority> authorities = jwtService.extractRoles(token).stream()
+                final List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                jwtService.extractRoles(token).stream()
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                        .toList();
+                        .forEach(authorities::add);
+                jwtService.extractPermissions(token).stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .forEach(authorities::add);
 
                 final UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(

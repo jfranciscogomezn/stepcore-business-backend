@@ -88,6 +88,15 @@ class EmployeeControllerIT extends BaseIntegrationTest {
     }
 
     @Test
+    void shouldRejectUserWithoutEmployeeConfigPermission() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get(BASE)
+                        .header("Authorization", "Bearer " + JwtTestSupport.employeeToken(2L)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message")
+                        .value("Access denied: insufficient permissions for this operation"));
+    }
+
+    @Test
     void shouldReturn404ForMissingEmployee() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(BASE + "/99999")
                         .header("Authorization", "Bearer " + JwtTestSupport.adminToken(2L)))

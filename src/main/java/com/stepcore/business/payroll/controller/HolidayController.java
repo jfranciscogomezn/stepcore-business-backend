@@ -3,6 +3,7 @@ package com.stepcore.business.payroll.controller;
 import com.stepcore.business.payroll.controller.dto.HolidayRequest;
 import com.stepcore.business.payroll.controller.dto.HolidayResponse;
 import com.stepcore.business.payroll.service.HolidayService;
+import com.stepcore.business.security.AppPermissions;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,19 +27,19 @@ public class HolidayController {
     private final HolidayService holidayService;
 
     @GetMapping("/{year}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.PAYROLL_CONFIG + "')")
     public List<HolidayResponse> listByYear(@PathVariable final int year) {
         return holidayService.listByYear(year);
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.PAYROLL_CONFIG + "')")
     public ResponseEntity<HolidayResponse> create(@Valid @RequestBody final HolidayRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(holidayService.create(request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.PAYROLL_CONFIG + "')")
     public ResponseEntity<Void> delete(@PathVariable final Long id) {
         holidayService.delete(id);
         return ResponseEntity.noContent().build();
