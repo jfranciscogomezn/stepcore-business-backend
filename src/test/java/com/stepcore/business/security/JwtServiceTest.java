@@ -33,11 +33,12 @@ class JwtServiceTest {
     }
 
     @Test
-    void shouldExtractEmailTenantAndRoles() {
+    void shouldExtractEmailTenantRolesAndPermissions() {
         final String token = JwtTestSupport.adminToken(42L);
         assertThat(jwtService.extractEmail(token)).isEqualTo("admin@test.com");
         assertThat(jwtService.extractTenantId(token)).isEqualTo(42L);
         assertThat(jwtService.extractRoles(token)).containsExactly("ADMIN");
+        assertThat(jwtService.extractPermissions(token)).contains("EMPLOYEE_CONFIG", "PAYROLL_CONFIG");
     }
 
     @Test

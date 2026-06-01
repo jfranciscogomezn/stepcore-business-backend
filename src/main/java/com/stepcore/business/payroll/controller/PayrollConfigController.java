@@ -3,6 +3,7 @@ package com.stepcore.business.payroll.controller;
 import com.stepcore.business.payroll.controller.dto.PayrollConfigRequest;
 import com.stepcore.business.payroll.controller.dto.PayrollConfigResponse;
 import com.stepcore.business.payroll.service.PayrollConfigService;
+import com.stepcore.business.security.AppPermissions;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +23,13 @@ public class PayrollConfigController {
     private final PayrollConfigService payrollConfigService;
 
     @GetMapping("/{year}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.PAYROLL_CONFIG + "')")
     public PayrollConfigResponse getByYear(@PathVariable final int year) {
         return payrollConfigService.getByYear(year);
     }
 
     @PutMapping("/{year}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.PAYROLL_CONFIG + "')")
     public ResponseEntity<PayrollConfigResponse> upsert(
             @PathVariable final int year,
             @Valid @RequestBody final PayrollConfigRequest request) {

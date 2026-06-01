@@ -4,6 +4,7 @@ import com.stepcore.business.employee.controller.dto.CreateEmployeeRequest;
 import com.stepcore.business.employee.controller.dto.EmployeeResponse;
 import com.stepcore.business.employee.controller.dto.UpdateEmployeeRequest;
 import com.stepcore.business.employee.service.EmployeeService;
+import com.stepcore.business.security.AppPermissions;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,25 +28,25 @@ public class EmployeeController {
     private final EmployeeService employeeService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.EMPLOYEE_CONFIG + "')")
     public ResponseEntity<EmployeeResponse> create(@Valid @RequestBody final CreateEmployeeRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.create(request));
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.EMPLOYEE_CONFIG + "')")
     public List<EmployeeResponse> listAll() {
         return employeeService.listAll();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.EMPLOYEE_CONFIG + "')")
     public EmployeeResponse getById(@PathVariable final Long id) {
         return employeeService.getById(id);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('" + AppPermissions.EMPLOYEE_CONFIG + "')")
     public EmployeeResponse update(
             @PathVariable final Long id,
             @Valid @RequestBody final UpdateEmployeeRequest request) {
