@@ -33,14 +33,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class,
-                        EmployeeNotFoundException.class})
+                        EmployeeNotFoundException.class, TimeRecordNotFoundException.class,
+                        EmployeeProfileNotLinkedException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     @ExceptionHandler({DuplicateHolidayException.class, DuplicateEmployeeDocumentException.class,
-                        DuplicateEmployeeEmailException.class})
+                        DuplicateEmployeeEmailException.class, DuplicateTimeRecordException.class})
     public ResponseEntity<ErrorResponse> handleConflict(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
@@ -53,6 +54,12 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed: " + details, request);
+    }
+
+    @ExceptionHandler(InvalidTimeRecordOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTimeRecordOperation(
+            final InvalidTimeRecordOperationException ex, final HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     @ExceptionHandler(Exception.class)
