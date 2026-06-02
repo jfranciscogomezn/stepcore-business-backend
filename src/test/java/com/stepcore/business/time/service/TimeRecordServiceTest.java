@@ -5,6 +5,8 @@ import com.stepcore.business.employee.domain.model.IdType;
 import com.stepcore.business.employee.repository.EmployeeRepository;
 import com.stepcore.business.exception.DuplicateTimeRecordException;
 import com.stepcore.business.exception.InvalidTimeRecordOperationException;
+import com.stepcore.business.time.controller.dto.CorrectTimeRecordRequest;
+import com.stepcore.business.time.controller.dto.ResolveIncompleteRequest;
 import com.stepcore.business.time.controller.dto.TimeRecordResponse;
 import com.stepcore.business.time.controller.mapper.TimeRecordMapper;
 import com.stepcore.business.time.domain.model.TimeRecord;
@@ -20,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,5 +138,91 @@ class TimeRecordServiceTest {
 
         assertThatThrownBy(() -> timeRecordService.clockOut("employee@test.com"))
                 .isInstanceOf(DuplicateTimeRecordException.class);
+    }
+
+    @Test
+    void shouldReopenClosedRecord() {
+        final TimeRecord closedRecord = TimeRecord.builder()
+                .withId(5L)
+                .withEmployeeId(10L)
+                .withWorkDate(LocalDate.now().minusDays(1))
+                .withClockIn(Instant.parse("2026-05-30T08:00:00Z"))
+                .withClockOut(Instant.parse("2026-05-30T17:00:00Z"))
+                .withStatus(TimeRecordStatus.CLOSED)
+                .build();
+
+        when(timeRecordRepository.findById(5L)).thenReturn(Optional.of(closedRecord));
+        when(timeRecordRepository.save(closedRecord)).thenReturn(closedRecord);
+
+        final TimeRecordResponse response = timeRecordService.reopen(5L);
+
+        assertThat(response.status()).isEqualTo(TimeRecordStatus.OPEN);
+        assertThat(closedRecord.getClockOut()).isNull();
+    }
+
+    @Test
+    void shouldResolveIncompleteRecord() {
+        final TimeRecord incompleteRecord = TimeRecord.builder()
+                .withId(6L)
+                .withEmployeeId(10L)
+                .withWorkDate(LocalDate.now().minusDays(2))
+                .withClockIn(Instant.parse("2026-05-28T08:00:00Z"))
+                .withStatus(TimeRecordStatus.INCOMPLETE)
+                .build();
+
+        when(timeRecordRepository.findById(6L)).thenReturn(Optional.of(incompleteRecord));
+        when(timeRecordRepository.save(incompleteRecord)).thenReturn(incompleteRecord);
+
+        final TimeRecordResponse response = timeRecordService.resolveIncomplete(
+                6L,
+                new ResolveIncompleteRequest(Instant.parse("2026-05-28T17:00:00Z"), "Forgot to clock out"));
+
+        assertThat(response.status()).isEqualTo(TimeRecordStatus.CLOSED);
+        assertThat(response.corrected()).isTrue();
+    }
+
+    @Test
+    void shouldFlagStaleOpenRecordsAsIncomplete() {
+        final TimeRecord staleRecord = TimeRecord.builder()
+                .withId(7L)
+                .withEmployeeId(10L)
+                .withWorkDate(LocalDate.now().minusDays(1))
+                .withClockIn(Instant.parse("2026-05-30T08:00:00Z"))
+                .withStatus(TimeRecordStatus.OPEN)
+                .build();
+
+        when(timeRecordRepository.findByStatusAndWorkDateBeforeOrderByWorkDateAsc(
+                TimeRecordStatus.OPEN, LocalDate.now())).thenReturn(List.of(staleRecord));
+        when(timeRecordRepository.saveAll(List.of(staleRecord))).thenReturn(List.of(staleRecord));
+
+        final int updated = timeRecordService.flagStaleOpenRecordsAsIncomplete();
+
+        assertThat(updated).isEqualTo(1);
+        assertThat(staleRecord.getStatus()).isEqualTo(TimeRecordStatus.INCOMPLETE);
+    }
+
+    @Test
+    void shouldCorrectClosedRecord() {
+        final TimeRecord closedRecord = TimeRecord.builder()
+                .withId(8L)
+                .withEmployeeId(10L)
+                .withWorkDate(LocalDate.now().minusDays(3))
+                .withClockIn(Instant.parse("2026-05-27T08:00:00Z"))
+                .withClockOut(Instant.parse("2026-05-27T17:00:00Z"))
+                .withStatus(TimeRecordStatus.CLOSED)
+                .build();
+
+        when(timeRecordRepository.findById(8L)).thenReturn(Optional.of(closedRecord));
+        when(timeRecordRepository.save(closedRecord)).thenReturn(closedRecord);
+
+        final TimeRecordResponse response = timeRecordService.correctRecord(
+                8L,
+                new CorrectTimeRecordRequest(
+                        Instant.parse("2026-05-27T09:00:00Z"),
+                        Instant.parse("2026-05-27T18:00:00Z"),
+                        "Late arrival approved"));
+
+        assertThat(response.corrected()).isTrue();
+        assertThat(closedRecord.getOriginalClockIn()).isEqualTo(Instant.parse("2026-05-27T08:00:00Z"));
     }
 }
