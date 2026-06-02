@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.stream.Collectors;
@@ -33,14 +34,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class,
-                        EmployeeNotFoundException.class})
+                        EmployeeNotFoundException.class, TimeRecordNotFoundException.class,
+                        EmployeeProfileNotLinkedException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     @ExceptionHandler({DuplicateHolidayException.class, DuplicateEmployeeDocumentException.class,
-                        DuplicateEmployeeEmailException.class})
+                        DuplicateEmployeeEmailException.class, DuplicateTimeRecordException.class})
     public ResponseEntity<ErrorResponse> handleConflict(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
@@ -53,6 +55,21 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed: " + details, request);
+    }
+
+    @ExceptionHandler(InvalidTimeRecordOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTimeRecordOperation(
+            final InvalidTimeRecordOperationException ex, final HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(
+            final NoResourceFoundException ex, final HttpServletRequest request) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "API endpoint not found. Ensure the business backend includes the required module.",
+                request);
     }
 
     @ExceptionHandler(Exception.class)
