@@ -92,7 +92,59 @@ public class TimeRecord {
         this.status = TimeRecordStatus.CLOSED;
     }
 
+    public void reopen() {
+        this.status = TimeRecordStatus.OPEN;
+        this.clockOut = null;
+    }
+
+    public void markIncomplete() {
+        if (this.status == TimeRecordStatus.OPEN) {
+            this.status = TimeRecordStatus.INCOMPLETE;
+        }
+    }
+
+    public void resolveIncomplete(final Instant manualClockOut, final String note) {
+        captureOriginalsIfNeeded();
+        this.clockOut = manualClockOut;
+        this.status = TimeRecordStatus.CLOSED;
+        this.corrected = true;
+        this.correctionReason = note;
+    }
+
+    public void applyCorrection(
+            final Instant newClockIn,
+            final Instant newClockOut,
+            final String reason) {
+        captureOriginalsIfNeeded();
+        if (newClockIn != null) {
+            this.clockIn = newClockIn;
+        }
+        if (newClockOut != null) {
+            this.clockOut = newClockOut;
+        }
+        this.status = TimeRecordStatus.CLOSED;
+        this.corrected = true;
+        this.correctionReason = reason;
+    }
+
+    private void captureOriginalsIfNeeded() {
+        if (this.originalClockIn == null) {
+            this.originalClockIn = this.clockIn;
+        }
+        if (this.originalClockOut == null) {
+            this.originalClockOut = this.clockOut;
+        }
+    }
+
     public boolean isOpen() {
         return status == TimeRecordStatus.OPEN;
+    }
+
+    public boolean isClosed() {
+        return status == TimeRecordStatus.CLOSED;
+    }
+
+    public boolean isIncomplete() {
+        return status == TimeRecordStatus.INCOMPLETE;
     }
 }

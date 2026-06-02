@@ -19,4 +19,9 @@ public interface TimeRecordRepository extends JpaRepository<TimeRecord, Long> {
 
     List<TimeRecord> findByEmployeeIdAndStatusOrderByWorkDateDesc(
             Long employeeId, TimeRecordStatus status);
+
+    List<TimeRecord> findByStatusAndWorkDateBeforeOrderByWorkDateAsc(
+            TimeRecordStatus status, LocalDate workDate);
+
+    List<TimeRecord> findByStatusOrderByWorkDateDesc(TimeRecordStatus status);
 }
