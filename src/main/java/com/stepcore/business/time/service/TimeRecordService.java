@@ -5,6 +5,8 @@ import com.stepcore.business.time.controller.dto.CorrectTimeRecordRequest;
 import com.stepcore.business.time.controller.dto.ResolveIncompleteRequest;
 import com.stepcore.business.time.controller.dto.TimeRecordResponse;
 
+import com.stepcore.business.time.domain.model.TimeRecord;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -28,5 +30,5 @@ public interface TimeRecordService {
 
     TimeRecordResponse createCorrectedRecord(CreateTimeRecordRequest request);
 
-    int flagStaleOpenRecordsAsIncomplete();
+    List<TimeRecord> flagStaleOpenRecordsAsIncomplete();
 }

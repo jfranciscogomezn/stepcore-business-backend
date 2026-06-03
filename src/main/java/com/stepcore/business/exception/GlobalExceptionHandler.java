@@ -21,6 +21,14 @@ public class GlobalExceptionHandler {
 
     public record ErrorResponse(String timestamp, int status, String error, String message, String path) {}
 
+    public record IncompleteReportErrorResponse(
+            String timestamp,
+            int status,
+            String error,
+            String message,
+            String path,
+            java.util.List<java.time.LocalDate> incompleteDates) {}
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
             final AuthenticationException ex, final HttpServletRequest request) {
@@ -61,6 +69,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidTimeRecordOperation(
             final InvalidTimeRecordOperationException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({InvalidReportPeriodException.class, IllegalArgumentException.class})
+    public ResponseEntity<ErrorResponse> handleBadRequest(
+            final RuntimeException ex, final HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(IncompleteReportException.class)
+    public ResponseEntity<IncompleteReportErrorResponse> handleIncompleteReport(
+            final IncompleteReportException ex, final HttpServletRequest request) {
+        final IncompleteReportErrorResponse body = new IncompleteReportErrorResponse(
+                Instant.now().toString(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI(),
+                ex.getIncompleteDates());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
