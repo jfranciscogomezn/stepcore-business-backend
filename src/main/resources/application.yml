@@ -32,6 +32,12 @@ jwt:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 
+app:
+  notifications:
+    email-from: ${NOTIFICATION_EMAIL_FROM:noreply@stepcore.local}
+    jdbc-admin-lookup-enabled: ${NOTIFICATION_JDBC_LOOKUP:true}
+    fallback-admin-emails: ${NOTIFICATION_FALLBACK_ADMIN_EMAILS:}
+
 springdoc:
   api-docs:
     path: /api-docs
