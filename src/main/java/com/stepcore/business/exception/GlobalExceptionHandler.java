@@ -1,6 +1,8 @@
 package com.stepcore.business.exception;
 
+import com.stepcore.business.i18n.ApiMessageService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +19,10 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final ApiMessageService apiMessageService;
 
     public record ErrorResponse(String timestamp, int status, String error, String message, String path) {}
 
@@ -32,13 +37,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
             final AuthenticationException ex, final HttpServletRequest request) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+        return buildResponse(HttpStatus.UNAUTHORIZED, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             final AccessDeniedException ex, final HttpServletRequest request) {
-        return buildResponse(HttpStatus.FORBIDDEN, "Access denied: insufficient permissions for this operation", request);
+        return buildResponse(HttpStatus.FORBIDDEN, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class,
@@ -46,14 +51,14 @@ public class GlobalExceptionHandler {
                         EmployeeProfileNotLinkedException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(
             final RuntimeException ex, final HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+        return buildResponse(HttpStatus.NOT_FOUND, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler({DuplicateHolidayException.class, DuplicateEmployeeDocumentException.class,
                         DuplicateEmployeeEmailException.class, DuplicateTimeRecordException.class})
     public ResponseEntity<ErrorResponse> handleConflict(
             final RuntimeException ex, final HttpServletRequest request) {
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+        return buildResponse(HttpStatus.CONFLICT, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -62,19 +67,22 @@ public class GlobalExceptionHandler {
         final String details = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
-        return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed: " + details, request);
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                apiMessageService.resolveKey("error.validationFailed", details),
+                request);
     }
 
     @ExceptionHandler(InvalidTimeRecordOperationException.class)
     public ResponseEntity<ErrorResponse> handleInvalidTimeRecordOperation(
             final InvalidTimeRecordOperationException ex, final HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        return buildResponse(HttpStatus.BAD_REQUEST, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler({InvalidReportPeriodException.class, IllegalArgumentException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(
             final RuntimeException ex, final HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        return buildResponse(HttpStatus.BAD_REQUEST, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler(IncompleteReportException.class)
@@ -84,7 +92,7 @@ public class GlobalExceptionHandler {
                 Instant.now().toString(),
                 HttpStatus.CONFLICT.value(),
                 HttpStatus.CONFLICT.getReasonPhrase(),
-                ex.getMessage(),
+                apiMessageService.resolve(ex, ex.getMessage()),
                 request.getRequestURI(),
                 ex.getIncompleteDates());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
@@ -95,7 +103,7 @@ public class GlobalExceptionHandler {
             final NoResourceFoundException ex, final HttpServletRequest request) {
         return buildResponse(
                 HttpStatus.NOT_FOUND,
-                "API endpoint not found. Ensure the business backend includes the required module.",
+                apiMessageService.resolve(ex, "API endpoint not found. Ensure the business backend includes the required module."),
                 request);
     }
 
@@ -103,7 +111,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGeneric(
             final Exception ex, final HttpServletRequest request) {
         log.error("[GlobalExceptionHandler] - UNEXPECTED: {}", ex.getMessage(), ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, apiMessageService.resolveKey("error.unexpected"), request);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(
