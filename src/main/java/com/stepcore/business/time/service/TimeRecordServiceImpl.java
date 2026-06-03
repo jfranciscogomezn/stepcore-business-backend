@@ -1,5 +1,9 @@
 package com.stepcore.business.time.service;
 
+import com.stepcore.business.audit.TimeRecordAuditSnapshots;
+import com.stepcore.business.audit.TimeRecordAuditWriter;
+import com.stepcore.business.audit.model.TimeRecordAuditAction;
+import com.stepcore.business.audit.model.TimeRecordAuditSnapshot;
 import com.stepcore.business.employee.domain.model.Employee;
 import com.stepcore.business.employee.repository.EmployeeRepository;
 import com.stepcore.business.exception.DuplicateTimeRecordException;
@@ -33,6 +37,7 @@ public class TimeRecordServiceImpl implements TimeRecordService {
     private final TimeRecordRepository timeRecordRepository;
     private final EmployeeRepository employeeRepository;
     private final TimeRecordMapper timeRecordMapper;
+    private final TimeRecordAuditWriter timeRecordAuditWriter;
 
     @Override
     public TimeRecordResponse clockIn(final String userEmail) {
@@ -96,26 +101,45 @@ public class TimeRecordServiceImpl implements TimeRecordService {
     }
 
     @Override
-    public TimeRecordResponse reopen(final Long recordId) {
+    public TimeRecordResponse reopen(final String actorEmail, final Long recordId) {
         final TimeRecord record = findRecordOrThrow(recordId);
         if (!record.isClosed()) {
             throw new InvalidTimeRecordOperationException("Only closed records can be reopened");
         }
+        final TimeRecordAuditSnapshot before = TimeRecordAuditSnapshots.fromRecord(record);
         record.reopen();
         final TimeRecord saved = timeRecordRepository.save(record);
+        timeRecordAuditWriter.logChange(
+                actorEmail,
+                TimeRecordAuditAction.TIME_RECORD_REOPEN,
+                recordId,
+                before,
+                TimeRecordAuditSnapshots.fromRecord(saved),
+                null);
         log.info("[TimeRecordServiceImpl] - REOPEN: recordId={}", recordId);
         return timeRecordMapper.toResponse(saved);
     }
 
     @Override
-    public TimeRecordResponse resolveIncomplete(final Long recordId, final ResolveIncompleteRequest request) {
+    public TimeRecordResponse resolveIncomplete(
+            final String actorEmail,
+            final Long recordId,
+            final ResolveIncompleteRequest request) {
         final TimeRecord record = findRecordOrThrow(recordId);
         if (!record.isIncomplete()) {
             throw new InvalidTimeRecordOperationException("Only incomplete records can be resolved");
         }
+        final TimeRecordAuditSnapshot before = TimeRecordAuditSnapshots.fromRecord(record);
         validateClockOutAfterClockIn(record.getClockIn(), request.clockOut());
         record.resolveIncomplete(request.clockOut(), request.note().trim());
         final TimeRecord saved = timeRecordRepository.save(record);
+        timeRecordAuditWriter.logChange(
+                actorEmail,
+                TimeRecordAuditAction.TIME_RECORD_RESOLVE_INCOMPLETE,
+                recordId,
+                before,
+                TimeRecordAuditSnapshots.fromRecord(saved),
+                request.note().trim());
         log.info("[TimeRecordServiceImpl] - RESOLVE_INCOMPLETE: recordId={}", recordId);
         return timeRecordMapper.toResponse(saved);
     }
@@ -152,12 +176,16 @@ public class TimeRecordServiceImpl implements TimeRecordService {
     }
 
     @Override
-    public TimeRecordResponse correctRecord(final Long recordId, final CorrectTimeRecordRequest request) {
+    public TimeRecordResponse correctRecord(
+            final String actorEmail,
+            final Long recordId,
+            final CorrectTimeRecordRequest request) {
         if (request.clockIn() == null && request.clockOut() == null) {
             throw new InvalidTimeRecordOperationException("At least one of clock-in or clock-out must be provided");
         }
 
         final TimeRecord record = findRecordOrThrow(recordId);
+        final TimeRecordAuditSnapshot before = TimeRecordAuditSnapshots.fromRecord(record);
         final Instant nextClockIn = request.clockIn() != null ? request.clockIn() : record.getClockIn();
         final Instant nextClockOut = request.clockOut() != null ? request.clockOut() : record.getClockOut();
 
@@ -168,12 +196,21 @@ public class TimeRecordServiceImpl implements TimeRecordService {
         validateClockOutAfterClockIn(nextClockIn, nextClockOut);
         record.applyCorrection(request.clockIn(), request.clockOut(), request.correctionReason().trim());
         final TimeRecord saved = timeRecordRepository.save(record);
+        timeRecordAuditWriter.logChange(
+                actorEmail,
+                TimeRecordAuditAction.TIME_RECORD_CORRECT,
+                recordId,
+                before,
+                TimeRecordAuditSnapshots.fromRecord(saved),
+                request.correctionReason().trim());
         log.info("[TimeRecordServiceImpl] - CORRECT: recordId={}", recordId);
         return timeRecordMapper.toResponse(saved);
     }
 
     @Override
-    public TimeRecordResponse createCorrectedRecord(final CreateTimeRecordRequest request) {
+    public TimeRecordResponse createCorrectedRecord(
+            final String actorEmail,
+            final CreateTimeRecordRequest request) {
         if (!employeeRepository.existsById(request.employeeId())) {
             throw new EmployeeNotFoundException(request.employeeId());
         }
@@ -194,6 +231,13 @@ public class TimeRecordServiceImpl implements TimeRecordService {
                 .build();
 
         final TimeRecord saved = timeRecordRepository.save(record);
+        timeRecordAuditWriter.logChange(
+                actorEmail,
+                TimeRecordAuditAction.TIME_RECORD_CREATE,
+                saved.getId(),
+                null,
+                TimeRecordAuditSnapshots.fromRecord(saved),
+                request.correctionReason().trim());
         log.info("[TimeRecordServiceImpl] - CREATE_CORRECTED: employeeId={} date={}",
                 request.employeeId(), request.workDate());
         return timeRecordMapper.toResponse(saved);

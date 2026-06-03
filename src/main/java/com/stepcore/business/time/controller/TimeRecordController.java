@@ -79,32 +79,37 @@ public class TimeRecordController {
 
     @PatchMapping("/{id}/reopen")
     @PreAuthorize("hasAuthority('" + AppPermissions.TIME_RECORDS_ADMIN + "')")
-    public TimeRecordResponse reopen(@PathVariable final Long id) {
-        return timeRecordService.reopen(id);
+    public TimeRecordResponse reopen(
+            final Authentication authentication,
+            @PathVariable final Long id) {
+        return timeRecordService.reopen(authentication.getName(), id);
     }
 
     @PatchMapping("/{id}/resolve-incomplete")
     @PreAuthorize("hasAuthority('" + AppPermissions.TIME_RECORDS_ADMIN + "')")
     public TimeRecordResponse resolveIncomplete(
+            final Authentication authentication,
             @PathVariable final Long id,
             @Valid @RequestBody final ResolveIncompleteRequest request) {
-        return timeRecordService.resolveIncomplete(id, request);
+        return timeRecordService.resolveIncomplete(authentication.getName(), id, request);
     }
 
     @PutMapping("/{id}/correct")
     @PreAuthorize("hasAuthority('" + AppPermissions.TIME_RECORDS_ADMIN + "')")
     public TimeRecordResponse correctRecord(
+            final Authentication authentication,
             @PathVariable final Long id,
             @Valid @RequestBody final CorrectTimeRecordRequest request) {
-        return timeRecordService.correctRecord(id, request);
+        return timeRecordService.correctRecord(authentication.getName(), id, request);
     }
 
     @PostMapping("/correct")
     @PreAuthorize("hasAuthority('" + AppPermissions.TIME_RECORDS_ADMIN + "')")
     public ResponseEntity<TimeRecordResponse> createCorrectedRecord(
+            final Authentication authentication,
             @Valid @RequestBody final CreateTimeRecordRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(timeRecordService.createCorrectedRecord(request));
+                .body(timeRecordService.createCorrectedRecord(authentication.getName(), request));
     }
 
     private boolean hasAuthority(final Authentication authentication, final String authority) {

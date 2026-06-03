@@ -1,5 +1,7 @@
 package com.stepcore.business.time.service;
 
+import com.stepcore.business.audit.TimeRecordAuditWriter;
+import com.stepcore.business.audit.model.TimeRecordAuditAction;
 import com.stepcore.business.employee.domain.model.Employee;
 import com.stepcore.business.employee.domain.model.IdType;
 import com.stepcore.business.employee.repository.EmployeeRepository;
@@ -28,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +39,7 @@ class TimeRecordServiceTest {
 
     @Mock private TimeRecordRepository timeRecordRepository;
     @Mock private EmployeeRepository employeeRepository;
+    @Mock private TimeRecordAuditWriter timeRecordAuditWriter;
 
     private final TimeRecordMapper timeRecordMapper = new TimeRecordMapper();
 
@@ -46,7 +50,7 @@ class TimeRecordServiceTest {
     @BeforeEach
     void setUp() {
         timeRecordService = new TimeRecordServiceImpl(
-                timeRecordRepository, employeeRepository, timeRecordMapper);
+                timeRecordRepository, employeeRepository, timeRecordMapper, timeRecordAuditWriter);
         employee = Employee.builder()
                 .withId(10L)
                 .withTenantId(2L)
@@ -154,10 +158,17 @@ class TimeRecordServiceTest {
         when(timeRecordRepository.findById(5L)).thenReturn(Optional.of(closedRecord));
         when(timeRecordRepository.save(closedRecord)).thenReturn(closedRecord);
 
-        final TimeRecordResponse response = timeRecordService.reopen(5L);
+        final TimeRecordResponse response = timeRecordService.reopen("admin@test.com", 5L);
 
         assertThat(response.status()).isEqualTo(TimeRecordStatus.OPEN);
         assertThat(closedRecord.getClockOut()).isNull();
+        verify(timeRecordAuditWriter).logChange(
+                eq("admin@test.com"),
+                eq(TimeRecordAuditAction.TIME_RECORD_REOPEN),
+                eq(5L),
+                any(),
+                any(),
+                eq(null));
     }
 
     @Test
@@ -174,11 +185,19 @@ class TimeRecordServiceTest {
         when(timeRecordRepository.save(incompleteRecord)).thenReturn(incompleteRecord);
 
         final TimeRecordResponse response = timeRecordService.resolveIncomplete(
+                "admin@test.com",
                 6L,
                 new ResolveIncompleteRequest(Instant.parse("2026-05-28T17:00:00Z"), "Forgot to clock out"));
 
         assertThat(response.status()).isEqualTo(TimeRecordStatus.CLOSED);
         assertThat(response.corrected()).isTrue();
+        verify(timeRecordAuditWriter).logChange(
+                eq("admin@test.com"),
+                eq(TimeRecordAuditAction.TIME_RECORD_RESOLVE_INCOMPLETE),
+                eq(6L),
+                any(),
+                any(),
+                eq("Forgot to clock out"));
     }
 
     @Test
@@ -216,6 +235,7 @@ class TimeRecordServiceTest {
         when(timeRecordRepository.save(closedRecord)).thenReturn(closedRecord);
 
         final TimeRecordResponse response = timeRecordService.correctRecord(
+                "admin@test.com",
                 8L,
                 new CorrectTimeRecordRequest(
                         Instant.parse("2026-05-27T09:00:00Z"),
@@ -224,5 +244,12 @@ class TimeRecordServiceTest {
 
         assertThat(response.corrected()).isTrue();
         assertThat(closedRecord.getOriginalClockIn()).isEqualTo(Instant.parse("2026-05-27T08:00:00Z"));
+        verify(timeRecordAuditWriter).logChange(
+                eq("admin@test.com"),
+                eq(TimeRecordAuditAction.TIME_RECORD_CORRECT),
+                eq(8L),
+                any(),
+                any(),
+                eq("Late arrival approved"));
     }
 }

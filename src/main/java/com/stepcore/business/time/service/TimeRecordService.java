@@ -20,15 +20,15 @@ public interface TimeRecordService {
 
     List<TimeRecordResponse> getEmployeeRecords(Long employeeId, LocalDate from, LocalDate to);
 
-    TimeRecordResponse reopen(Long recordId);
+    TimeRecordResponse reopen(String actorEmail, Long recordId);
 
-    TimeRecordResponse resolveIncomplete(Long recordId, ResolveIncompleteRequest request);
+    TimeRecordResponse resolveIncomplete(String actorEmail, Long recordId, ResolveIncompleteRequest request);
 
     List<TimeRecordResponse> getIncompleteRecords(String userEmail, boolean isAdmin, Long employeeId);
 
-    TimeRecordResponse correctRecord(Long recordId, CorrectTimeRecordRequest request);
+    TimeRecordResponse correctRecord(String actorEmail, Long recordId, CorrectTimeRecordRequest request);
 
-    TimeRecordResponse createCorrectedRecord(CreateTimeRecordRequest request);
+    TimeRecordResponse createCorrectedRecord(String actorEmail, CreateTimeRecordRequest request);
 
     List<TimeRecord> flagStaleOpenRecordsAsIncomplete();
 }
