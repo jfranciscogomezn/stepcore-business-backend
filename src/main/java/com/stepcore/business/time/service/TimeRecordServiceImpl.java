@@ -200,14 +200,14 @@ public class TimeRecordServiceImpl implements TimeRecordService {
     }
 
     @Override
-    public int flagStaleOpenRecordsAsIncomplete() {
+    public List<TimeRecord> flagStaleOpenRecordsAsIncomplete() {
         final LocalDate today = LocalDate.now();
         final List<TimeRecord> staleOpenRecords = timeRecordRepository
                 .findByStatusAndWorkDateBeforeOrderByWorkDateAsc(TimeRecordStatus.OPEN, today);
 
         staleOpenRecords.forEach(TimeRecord::markIncomplete);
         timeRecordRepository.saveAll(staleOpenRecords);
-        return staleOpenRecords.size();
+        return staleOpenRecords;
     }
 
     private List<TimeRecordResponse> listRecords(

@@ -9,6 +9,7 @@ public final class AppPermissions {
     public static final String EMPLOYEE_CONFIG = "EMPLOYEE_CONFIG";
     public static final String TIME_RECORDS_ADMIN = "TIME_RECORDS_ADMIN";
     public static final String MY_TIME = "MY_TIME";
+    public static final String REPORTS = "REPORTS";
 
     private AppPermissions() {
     }

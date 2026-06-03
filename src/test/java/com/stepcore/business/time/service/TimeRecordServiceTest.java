@@ -195,9 +195,9 @@ class TimeRecordServiceTest {
                 TimeRecordStatus.OPEN, LocalDate.now())).thenReturn(List.of(staleRecord));
         when(timeRecordRepository.saveAll(List.of(staleRecord))).thenReturn(List.of(staleRecord));
 
-        final int updated = timeRecordService.flagStaleOpenRecordsAsIncomplete();
+        final List<TimeRecord> updated = timeRecordService.flagStaleOpenRecordsAsIncomplete();
 
-        assertThat(updated).isEqualTo(1);
+        assertThat(updated).hasSize(1);
         assertThat(staleRecord.getStatus()).isEqualTo(TimeRecordStatus.INCOMPLETE);
     }
 
