@@ -48,7 +48,43 @@ class TimeRecordAuditControllerIT extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].action").value("TIME_RECORD_CREATE"))
                 .andExpect(jsonPath("$[0].actorEmail").value("admin@test.com"))
+                .andExpect(jsonPath("$[0].correctionReason").value("Manual entry for audit test"))
                 .andExpect(jsonPath("$[0].details").value(org.hamcrest.Matchers.containsString("Manual entry")));
+    }
+
+    @Test
+    void shouldFilterAuditEntriesByEmployeeAndDate() throws Exception {
+        final String employeeBody = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/employees")
+                        .header("Authorization", "Bearer " + ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(EmployeeTestSupport.validCreateRequest())))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        final Long employeeId = objectMapper.readTree(employeeBody).get("id").asLong();
+
+        final CreateTimeRecordRequest recordRequest = new CreateTimeRecordRequest(
+                employeeId,
+                LocalDate.of(2026, 5, 21),
+                Instant.parse("2026-05-21T13:00:00Z"),
+                Instant.parse("2026-05-21T22:00:00Z"),
+                "Filtered audit entry");
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/time-records/correct")
+                        .header("Authorization", "Bearer " + ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(recordRequest)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/audit/time-records")
+                        .header("Authorization", "Bearer " + ADMIN_TOKEN)
+                        .param("employeeId", employeeId.toString())
+                        .param("from", "2026-05-21")
+                        .param("to", "2026-05-21"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].action").value("TIME_RECORD_CREATE"))
+                .andExpect(jsonPath("$[0].newValue").value(org.hamcrest.Matchers.containsString("\"employeeId\":" + employeeId)));
     }
 
     @Test

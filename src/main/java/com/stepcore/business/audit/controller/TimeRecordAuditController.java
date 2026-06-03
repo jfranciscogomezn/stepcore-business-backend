@@ -1,15 +1,18 @@
 package com.stepcore.business.audit.controller;
 
 import com.stepcore.business.audit.controller.dto.TimeRecordAuditEntryResponse;
+import com.stepcore.business.audit.service.TimeRecordAuditFilter;
 import com.stepcore.business.audit.service.TimeRecordAuditService;
 import com.stepcore.business.security.AppPermissions;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -21,8 +24,12 @@ public class TimeRecordAuditController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('" + AppPermissions.TIME_RECORDS_ADMIN + "')")
-    public List<TimeRecordAuditEntryResponse> listRecent(
+    public List<TimeRecordAuditEntryResponse> list(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate to,
+            @RequestParam(required = false) final Long employeeId,
+            @RequestParam(required = false) final Long userId,
             @RequestParam(defaultValue = "50") final int limit) {
-        return timeRecordAuditService.listRecent(limit);
+        return timeRecordAuditService.list(new TimeRecordAuditFilter(from, to, employeeId, userId, limit));
     }
 }
