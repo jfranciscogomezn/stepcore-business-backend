@@ -48,7 +48,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class,
                         EmployeeNotFoundException.class, TimeRecordNotFoundException.class,
-                        EmployeeProfileNotLinkedException.class, CorrectionRequestNotFoundException.class})
+                        EmployeeProfileNotLinkedException.class, CorrectionRequestNotFoundException.class,
+                        ClientNotFoundException.class, VehicleNotFoundException.class,
+                        OsiNotFoundException.class, OsiEventNotFoundException.class,
+                        EventTypeNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, apiMessageService.resolve(ex, ex.getMessage()), request);
@@ -56,10 +59,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({DuplicateHolidayException.class, DuplicateEmployeeDocumentException.class,
                         DuplicateEmployeeEmailException.class, DuplicateTimeRecordException.class,
-                        DuplicateCorrectionRequestException.class, CorrectionRequestNotPendingException.class})
+                        DuplicateCorrectionRequestException.class, CorrectionRequestNotPendingException.class,
+                        DuplicateClientNameException.class, DuplicateVehiclePlateException.class})
     public ResponseEntity<ErrorResponse> handleConflict(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, apiMessageService.resolve(ex, ex.getMessage()), request);
+    }
+
+    @ExceptionHandler({VehicleRetiredException.class, OsiAlreadyClosedException.class,
+                        InvalidStateTransitionException.class, MaxAttachmentsExceededException.class})
+    public ResponseEntity<ErrorResponse> handleUnprocessableEntity(
+            final RuntimeException ex, final HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -11,6 +11,11 @@ public final class AppPermissions {
     public static final String MY_TIME = "MY_TIME";
     public static final String REPORTS = "REPORTS";
 
+    public static final String OPS_CLIENTS = "OPS_CLIENTS";
+    public static final String OPS_VEHICLES = "OPS_VEHICLES";
+    public static final String OPS_OSI = "OPS_OSI";
+    public static final String OPS_EVENT_TYPES = "OPS_EVENT_TYPES";
+
     private AppPermissions() {
     }
 }
