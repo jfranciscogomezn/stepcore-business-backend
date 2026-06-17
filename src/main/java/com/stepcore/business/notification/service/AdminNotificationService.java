@@ -41,6 +41,17 @@ public class AdminNotificationService {
         return adminNotificationRepository.save(notification);
     }
 
+    @Transactional
+    public AdminNotification saveCorrectionRequestNotification(final String title, final String message) {
+        final AdminNotification notification = AdminNotification.builder()
+                .withNotificationType(AdminNotification.TYPE_CORRECTION_REQUEST_SUBMITTED)
+                .withTitle(title)
+                .withMessage(message)
+                .withPayload("[]")
+                .build();
+        return adminNotificationRepository.save(notification);
+    }
+
     private AdminNotificationResponse toResponse(final AdminNotification notification) {
         return new AdminNotificationResponse(
                 notification.getId(),

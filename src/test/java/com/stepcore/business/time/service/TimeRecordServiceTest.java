@@ -7,6 +7,7 @@ import com.stepcore.business.employee.domain.model.IdType;
 import com.stepcore.business.employee.repository.EmployeeRepository;
 import com.stepcore.business.exception.DuplicateTimeRecordException;
 import com.stepcore.business.exception.InvalidTimeRecordOperationException;
+import com.stepcore.business.notification.service.EmployeeNotificationService;
 import com.stepcore.business.time.controller.dto.CorrectTimeRecordRequest;
 import com.stepcore.business.time.controller.dto.ResolveIncompleteRequest;
 import com.stepcore.business.time.controller.dto.TimeRecordResponse;
@@ -40,6 +41,8 @@ class TimeRecordServiceTest {
     @Mock private TimeRecordRepository timeRecordRepository;
     @Mock private EmployeeRepository employeeRepository;
     @Mock private TimeRecordAuditWriter timeRecordAuditWriter;
+    @Mock private CorrectionRequestService correctionRequestService;
+    @Mock private EmployeeNotificationService employeeNotificationService;
 
     private final TimeRecordMapper timeRecordMapper = new TimeRecordMapper();
 
@@ -50,7 +53,8 @@ class TimeRecordServiceTest {
     @BeforeEach
     void setUp() {
         timeRecordService = new TimeRecordServiceImpl(
-                timeRecordRepository, employeeRepository, timeRecordMapper, timeRecordAuditWriter);
+                timeRecordRepository, employeeRepository, timeRecordMapper, timeRecordAuditWriter,
+                correctionRequestService, employeeNotificationService);
         employee = Employee.builder()
                 .withId(10L)
                 .withTenantId(2L)
