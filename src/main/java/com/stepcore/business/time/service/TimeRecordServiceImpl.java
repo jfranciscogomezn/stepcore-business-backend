@@ -11,6 +11,8 @@ import com.stepcore.business.exception.EmployeeNotFoundException;
 import com.stepcore.business.exception.EmployeeProfileNotLinkedException;
 import com.stepcore.business.exception.InvalidTimeRecordOperationException;
 import com.stepcore.business.exception.TimeRecordNotFoundException;
+import com.stepcore.business.notification.domain.model.EmployeeNotification;
+import com.stepcore.business.notification.service.EmployeeNotificationService;
 import com.stepcore.business.time.controller.dto.CreateTimeRecordRequest;
 import com.stepcore.business.time.controller.dto.CorrectTimeRecordRequest;
 import com.stepcore.business.time.controller.dto.ResolveIncompleteRequest;
@@ -38,6 +40,8 @@ public class TimeRecordServiceImpl implements TimeRecordService {
     private final EmployeeRepository employeeRepository;
     private final TimeRecordMapper timeRecordMapper;
     private final TimeRecordAuditWriter timeRecordAuditWriter;
+    private final CorrectionRequestService correctionRequestService;
+    private final EmployeeNotificationService employeeNotificationService;
 
     @Override
     public TimeRecordResponse clockIn(final String userEmail) {
@@ -116,6 +120,11 @@ public class TimeRecordServiceImpl implements TimeRecordService {
                 before,
                 TimeRecordAuditSnapshots.fromRecord(saved),
                 null);
+        correctionRequestService.autoResolve(recordId);
+        notifyEmployee(record.getEmployeeId(), EmployeeNotification.TYPE_TIME_RECORD_REOPENED,
+                "Your time record has been reopened",
+                "An admin reopened your time record for " + record.getWorkDate()
+                        + ". You can now register a new clock-out.");
         log.info("[TimeRecordServiceImpl] - REOPEN: recordId={}", recordId);
         return timeRecordMapper.toResponse(saved);
     }
@@ -203,6 +212,11 @@ public class TimeRecordServiceImpl implements TimeRecordService {
                 before,
                 TimeRecordAuditSnapshots.fromRecord(saved),
                 request.correctionReason().trim());
+        correctionRequestService.autoResolve(recordId);
+        notifyEmployee(record.getEmployeeId(), EmployeeNotification.TYPE_TIME_RECORD_CORRECTED,
+                "Your time record has been corrected",
+                "An admin corrected your time record for " + record.getWorkDate()
+                        + ". Reason: " + request.correctionReason().trim());
         log.info("[TimeRecordServiceImpl] - CORRECT: recordId={}", recordId);
         return timeRecordMapper.toResponse(saved);
     }
@@ -238,6 +252,10 @@ public class TimeRecordServiceImpl implements TimeRecordService {
                 null,
                 TimeRecordAuditSnapshots.fromRecord(saved),
                 request.correctionReason().trim());
+        notifyEmployee(request.employeeId(), EmployeeNotification.TYPE_TIME_RECORD_CREATED_BY_ADMIN,
+                "A time record has been created for you",
+                "An admin created a time record for you on " + request.workDate()
+                        + ". Reason: " + request.correctionReason().trim());
         log.info("[TimeRecordServiceImpl] - CREATE_CORRECTED: employeeId={} date={}",
                 request.employeeId(), request.workDate());
         return timeRecordMapper.toResponse(saved);
@@ -252,6 +270,18 @@ public class TimeRecordServiceImpl implements TimeRecordService {
         staleOpenRecords.forEach(TimeRecord::markIncomplete);
         timeRecordRepository.saveAll(staleOpenRecords);
         return staleOpenRecords;
+    }
+
+    private void notifyEmployee(
+            final Long employeeId,
+            final String notificationType,
+            final String title,
+            final String message) {
+        employeeRepository.findById(employeeId).ifPresent(employee -> {
+            if (employee.getUserId() != null) {
+                employeeNotificationService.save(employee.getUserId(), notificationType, title, message);
+            }
+        });
     }
 
     private List<TimeRecordResponse> listRecords(

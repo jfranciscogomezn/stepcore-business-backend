@@ -12,22 +12,24 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnTransformer;
+import lombok.Setter;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
 
 @Entity
-@Table(name = "admin_notifications")
+@Table(name = "employee_notifications")
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 @Getter
 @Builder(setterPrefix = "with")
 @NoArgsConstructor
 @AllArgsConstructor
-public class AdminNotification {
+public class EmployeeNotification {
 
-    public static final String TYPE_INCOMPLETE_TIME_RECORDS       = "INCOMPLETE_TIME_RECORDS";
-    public static final String TYPE_CORRECTION_REQUEST_SUBMITTED  = "TIME_CORRECTION_REQUEST_SUBMITTED";
+    public static final String TYPE_CORRECTION_REQUEST_SUBMITTED = "TIME_CORRECTION_REQUEST_SUBMITTED";
+    public static final String TYPE_TIME_RECORD_REOPENED         = "TIME_RECORD_REOPENED";
+    public static final String TYPE_TIME_RECORD_CORRECTED        = "TIME_RECORD_CORRECTED";
+    public static final String TYPE_TIME_RECORD_CREATED_BY_ADMIN = "TIME_RECORD_CREATED_BY_ADMIN";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,18 +38,21 @@ public class AdminNotification {
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
 
-    @Column(name = "notification_type", nullable = false, length = 50)
+    @Column(name = "recipient_user_id", nullable = false)
+    private Long recipientUserId;
+
+    @Column(name = "notification_type", nullable = false, length = 60)
     private String notificationType;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, columnDefinition = "text")
     private String title;
 
     @Column(nullable = false, columnDefinition = "text")
     private String message;
 
-    @Column(nullable = false, columnDefinition = "jsonb")
-    @ColumnTransformer(read = "payload::text", write = "?::jsonb")
-    private String payload;
+    @Setter
+    @Column(nullable = false)
+    private boolean read;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

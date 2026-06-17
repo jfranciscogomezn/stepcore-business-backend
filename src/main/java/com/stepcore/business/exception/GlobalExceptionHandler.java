@@ -48,14 +48,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({PayrollConfigNotFoundException.class, HolidayNotFoundException.class,
                         EmployeeNotFoundException.class, TimeRecordNotFoundException.class,
-                        EmployeeProfileNotLinkedException.class})
+                        EmployeeProfileNotLinkedException.class, CorrectionRequestNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, apiMessageService.resolve(ex, ex.getMessage()), request);
     }
 
     @ExceptionHandler({DuplicateHolidayException.class, DuplicateEmployeeDocumentException.class,
-                        DuplicateEmployeeEmailException.class, DuplicateTimeRecordException.class})
+                        DuplicateEmployeeEmailException.class, DuplicateTimeRecordException.class,
+                        DuplicateCorrectionRequestException.class, CorrectionRequestNotPendingException.class})
     public ResponseEntity<ErrorResponse> handleConflict(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, apiMessageService.resolve(ex, ex.getMessage()), request);
