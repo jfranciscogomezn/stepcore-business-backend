@@ -14,4 +14,6 @@ public interface TimeCorrectionRequestRepository extends JpaRepository<TimeCorre
     boolean existsByTimeRecordIdAndStatus(Long timeRecordId, TimeCorrectionRequestStatus status);
 
     List<TimeCorrectionRequest> findByTenantIdAndStatusOrderByCreatedAtAsc(Long tenantId, TimeCorrectionRequestStatus status);
+
+    List<TimeCorrectionRequest> findByEmployeeIdAndStatusOrderByCreatedAtDesc(Long employeeId, TimeCorrectionRequestStatus status);
 }

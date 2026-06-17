@@ -66,4 +66,14 @@ public class CorrectionRequestController {
             @RequestParam(defaultValue = "PENDING") final String status) {
         return correctionRequestService.listPending();
     }
+
+    /**
+     * Employee retrieves their own pending correction requests.
+     * GET /api/v1/time-correction-requests/mine
+     */
+    @GetMapping("/time-correction-requests/mine")
+    @PreAuthorize("hasAuthority('" + AppPermissions.MY_TIME + "')")
+    public List<CorrectionRequestResponse> listMine(final Authentication authentication) {
+        return correctionRequestService.listPendingForEmployee(authentication.getName());
+    }
 }

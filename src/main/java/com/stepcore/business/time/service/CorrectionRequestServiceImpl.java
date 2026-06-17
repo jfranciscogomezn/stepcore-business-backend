@@ -136,6 +136,22 @@ public class CorrectionRequestServiceImpl implements CorrectionRequestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<CorrectionRequestResponse> listPendingForEmployee(final String actorEmail) {
+        final Employee employee = resolveEmployeeByEmail(actorEmail);
+        return correctionRequestRepository
+                .findByEmployeeIdAndStatusOrderByCreatedAtDesc(employee.getId(), TimeCorrectionRequestStatus.PENDING)
+                .stream()
+                .map(req -> {
+                    final TimeRecord record = timeRecordRepository.findById(req.getTimeRecordId()).orElse(null);
+                    final LocalDate workDate = record != null ? record.getWorkDate() : null;
+                    final String name = employee.getFirstName() + " " + employee.getLastName();
+                    return toResponse(req, name, workDate);
+                })
+                .toList();
+    }
+
+    @Override
     public void autoResolve(final Long timeRecordId) {
         correctionRequestRepository
                 .findByTimeRecordIdAndStatus(timeRecordId, TimeCorrectionRequestStatus.PENDING)

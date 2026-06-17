@@ -15,4 +15,6 @@ public interface CorrectionRequestService {
     List<CorrectionRequestResponse> listPending();
 
     void autoResolve(Long timeRecordId);
+
+    List<CorrectionRequestResponse> listPendingForEmployee(String actorEmail);
 }
