@@ -163,6 +163,7 @@ public class OsiServiceImpl implements OsiService {
         return new OsiVehicleAssignmentResponse(
                 a.getId(), a.getVehicleId(), plate,
                 a.getState().name(), a.getAssignedUserIds(),
+                a.getGpsProvider(), a.getGpsReferenceUrl(),
                 a.getCreatedAt(), a.getUpdatedAt());
     }
 

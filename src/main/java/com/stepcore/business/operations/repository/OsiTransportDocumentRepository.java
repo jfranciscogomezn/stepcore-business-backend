@@ -10,4 +10,6 @@ public interface OsiTransportDocumentRepository extends JpaRepository<OsiTranspo
     List<OsiTransportDocument> findByOsiIdAndVehicleIdOrderByCreatedAtDesc(Long osiId, Long vehicleId);
 
     List<OsiTransportDocument> findByOsiIdOrderByCreatedAtDesc(Long osiId);
+
+    long countByOsiIdAndVehicleId(Long osiId, Long vehicleId);
 }

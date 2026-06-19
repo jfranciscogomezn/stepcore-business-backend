@@ -57,6 +57,12 @@ public class OsiVehicleAssignment {
     @Builder.Default
     private List<Long> assignedUserIds = new ArrayList<>();
 
+    @Column(name = "gps_provider", length = 100)
+    private String gpsProvider;
+
+    @Column(name = "gps_reference_url", length = 500)
+    private String gpsReferenceUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
