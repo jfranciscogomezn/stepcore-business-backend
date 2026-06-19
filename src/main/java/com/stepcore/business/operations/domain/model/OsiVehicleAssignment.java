@@ -63,6 +63,19 @@ public class OsiVehicleAssignment {
     @Column(name = "gps_reference_url", length = 500)
     private String gpsReferenceUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "hc_validation_status", nullable = false, length = 20)
+    private HcValidationStatus hcValidationStatus;
+
+    @Column(name = "hc_validation_notes", columnDefinition = "TEXT")
+    private String hcValidationNotes;
+
+    @Column(name = "hc_validated_by_user_id")
+    private Long hcValidatedByUserId;
+
+    @Column(name = "hc_validated_at")
+    private OffsetDateTime hcValidatedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -77,6 +90,9 @@ public class OsiVehicleAssignment {
         }
         if (this.state == null) {
             this.state = OsiVehicleState.PLANNED;
+        }
+        if (this.hcValidationStatus == null) {
+            this.hcValidationStatus = HcValidationStatus.PENDIENTE;
         }
         this.updatedAt = OffsetDateTime.now();
     }

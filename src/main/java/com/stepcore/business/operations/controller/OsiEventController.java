@@ -88,7 +88,7 @@ public class OsiEventController {
     }
 
     @PostMapping("/{eventId}/comments")
-    @PreAuthorize("hasAuthority('" + AppPermissions.OPS_OSI + "')")
+    @PreAuthorize("hasAnyAuthority('" + AppPermissions.OPS_OSI + "','" + AppPermissions.OPS_COMERCIAL + "')")
     public OsiEventResponse addComment(
             @PathVariable Long osiId,
             @PathVariable Long vehicleId,

@@ -164,6 +164,10 @@ public class OsiServiceImpl implements OsiService {
                 a.getId(), a.getVehicleId(), plate,
                 a.getState().name(), a.getAssignedUserIds(),
                 a.getGpsProvider(), a.getGpsReferenceUrl(),
+                a.getHcValidationStatus() != null ? a.getHcValidationStatus().name() : "PENDIENTE",
+                a.getHcValidationNotes(),
+                a.getHcValidatedByUserId(),
+                a.getHcValidatedAt(),
                 a.getCreatedAt(), a.getUpdatedAt());
     }
 

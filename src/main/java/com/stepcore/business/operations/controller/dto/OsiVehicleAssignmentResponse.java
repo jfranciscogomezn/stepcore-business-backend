@@ -11,6 +11,10 @@ public record OsiVehicleAssignmentResponse(
         List<Long> assignedUserIds,
         String gpsProvider,
         String gpsReferenceUrl,
+        String hcValidationStatus,
+        String hcValidationNotes,
+        Long hcValidatedByUserId,
+        OffsetDateTime hcValidatedAt,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {}
