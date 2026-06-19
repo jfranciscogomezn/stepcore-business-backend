@@ -5,6 +5,7 @@ import com.stepcore.business.operations.controller.dto.AddCommentRequest;
 import com.stepcore.business.operations.controller.dto.CreateCorrectiveEventRequest;
 import com.stepcore.business.operations.controller.dto.CreateOsiEventRequest;
 import com.stepcore.business.operations.controller.dto.OsiEventResponse;
+import com.stepcore.business.operations.controller.dto.PortalEventResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +19,8 @@ public interface OsiEventService {
                                        CreateCorrectiveEventRequest request, Long authorUserId);
 
     List<OsiEventResponse> list(Long osiId, Long vehicleId);
+
+    List<PortalEventResponse> listForPortal(Long osiId);
 
     OsiEventResponse approveVisibility(Long osiId, Long vehicleId, Long eventId, Long approverUserId);
 

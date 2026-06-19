@@ -15,4 +15,7 @@ public interface OsiEventRepository extends JpaRepository<OsiEvent, Long> {
             Long tenantId, Long osiId, Long vehicleId, UUID idempotencyKey);
 
     List<OsiEvent> findByParentEventIdOrderByReceivedAtAsc(Long parentEventId);
+
+    List<OsiEvent> findByOsiIdAndEffectiveVisibilityInOrderByReceivedAtAsc(
+            Long osiId, List<com.stepcore.business.operations.domain.model.EventVisibility> visibilities);
 }
