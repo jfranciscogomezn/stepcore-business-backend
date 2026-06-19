@@ -4,6 +4,7 @@ import com.stepcore.business.operations.controller.dto.AddPersonnelRequest;
 import com.stepcore.business.operations.controller.dto.AssignVehicleRequest;
 import com.stepcore.business.operations.controller.dto.OsiVehicleAssignmentResponse;
 import com.stepcore.business.operations.controller.dto.StateTransitionRequest;
+import com.stepcore.business.operations.controller.dto.UpdateGpsRequest;
 import com.stepcore.business.operations.service.OsiVehicleAssignmentService;
 import com.stepcore.business.operations.service.UserResolver;
 import com.stepcore.business.security.AppPermissions;
@@ -64,5 +65,14 @@ public class OsiVehicleAssignmentController {
             @PathVariable Long assignmentId,
             @Valid @RequestBody AddPersonnelRequest request) {
         return assignmentService.addPersonnel(osiId, assignmentId, request);
+    }
+
+    @PatchMapping("/{assignmentId}/gps")
+    @PreAuthorize("hasAuthority('" + AppPermissions.OPS_OSI + "')")
+    public OsiVehicleAssignmentResponse updateGps(
+            @PathVariable Long osiId,
+            @PathVariable Long assignmentId,
+            @RequestBody UpdateGpsRequest request) {
+        return assignmentService.updateGps(osiId, assignmentId, request);
     }
 }

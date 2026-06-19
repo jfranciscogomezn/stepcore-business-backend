@@ -67,7 +67,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({VehicleRetiredException.class, OsiAlreadyClosedException.class,
-                        InvalidStateTransitionException.class, MaxAttachmentsExceededException.class})
+                        InvalidStateTransitionException.class, MaxAttachmentsExceededException.class,
+                        ChecklistViolationException.class})
     public ResponseEntity<ErrorResponse> handleUnprocessableEntity(
             final RuntimeException ex, final HttpServletRequest request) {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, apiMessageService.resolve(ex, ex.getMessage()), request);

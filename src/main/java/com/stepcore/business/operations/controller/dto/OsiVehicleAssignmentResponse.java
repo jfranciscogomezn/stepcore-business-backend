@@ -9,6 +9,8 @@ public record OsiVehicleAssignmentResponse(
         String vehiclePlate,
         String state,
         List<Long> assignedUserIds,
+        String gpsProvider,
+        String gpsReferenceUrl,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {}

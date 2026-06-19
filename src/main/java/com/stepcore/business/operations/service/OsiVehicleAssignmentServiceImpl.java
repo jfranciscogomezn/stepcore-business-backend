@@ -1,5 +1,6 @@
 package com.stepcore.business.operations.service;
 
+import com.stepcore.business.exception.ChecklistViolationException;
 import com.stepcore.business.exception.OsiNotFoundException;
 import com.stepcore.business.exception.VehicleNotFoundException;
 import com.stepcore.business.exception.VehicleRetiredException;
@@ -7,10 +8,12 @@ import com.stepcore.business.operations.controller.dto.AddPersonnelRequest;
 import com.stepcore.business.operations.controller.dto.AssignVehicleRequest;
 import com.stepcore.business.operations.controller.dto.OsiVehicleAssignmentResponse;
 import com.stepcore.business.operations.controller.dto.StateTransitionRequest;
+import com.stepcore.business.operations.controller.dto.UpdateGpsRequest;
 import com.stepcore.business.operations.domain.model.OsiVehicleAssignment;
 import com.stepcore.business.operations.domain.model.OsiVehicleState;
 import com.stepcore.business.operations.domain.model.VehicleStatus;
 import com.stepcore.business.operations.repository.OsiRepository;
+import com.stepcore.business.operations.repository.OsiTransportDocumentRepository;
 import com.stepcore.business.operations.repository.OsiVehicleAssignmentRepository;
 import com.stepcore.business.operations.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
     private final OsiRepository osiRepository;
     private final VehicleRepository vehicleRepository;
     private final OsiVehicleStateMachine stateMachine;
+    private final OsiTransportDocumentRepository documentRepository;
 
     @Override
     @Transactional
@@ -59,6 +63,15 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
         final OsiVehicleAssignment assignment = fetchOrThrow(assignmentId);
         final OsiVehicleState target = OsiVehicleState.valueOf(request.targetState());
         stateMachine.validate(assignment.getState(), target);
+
+        if (target == OsiVehicleState.CERRADO_TRACKING) {
+            final long docCount = documentRepository.countByOsiIdAndVehicleId(assignment.getOsiId(), assignment.getVehicleId());
+            if (docCount == 0) {
+                throw new ChecklistViolationException(
+                        "Cannot close tracking: at least one transport document is required before closing assignment " + assignmentId);
+            }
+        }
+
         assignment.setState(target);
         final String plate = vehicleRepository.findById(assignment.getVehicleId())
                 .map(v -> v.getPlate()).orElse("?");
@@ -75,6 +88,18 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
             if (!current.contains(uid)) current.add(uid);
         });
         assignment.setAssignedUserIds(current);
+        final String plate = vehicleRepository.findById(assignment.getVehicleId())
+                .map(v -> v.getPlate()).orElse("?");
+        return toResponse(assignmentRepository.save(assignment), plate);
+    }
+
+    @Override
+    @Transactional
+    public OsiVehicleAssignmentResponse updateGps(final Long osiId, final Long assignmentId,
+                                                   final UpdateGpsRequest request) {
+        final OsiVehicleAssignment assignment = fetchOrThrow(assignmentId);
+        assignment.setGpsProvider(request.gpsProvider());
+        assignment.setGpsReferenceUrl(request.gpsReferenceUrl());
         final String plate = vehicleRepository.findById(assignment.getVehicleId())
                 .map(v -> v.getPlate()).orElse("?");
         return toResponse(assignmentRepository.save(assignment), plate);
@@ -100,6 +125,7 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
         return new OsiVehicleAssignmentResponse(
                 a.getId(), a.getVehicleId(), plate,
                 a.getState().name(), a.getAssignedUserIds(),
+                a.getGpsProvider(), a.getGpsReferenceUrl(),
                 a.getCreatedAt(), a.getUpdatedAt());
     }
 }
