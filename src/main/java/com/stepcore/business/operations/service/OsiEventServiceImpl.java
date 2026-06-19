@@ -9,6 +9,8 @@ import com.stepcore.business.operations.controller.dto.AttachmentResponse;
 import com.stepcore.business.operations.controller.dto.CreateCorrectiveEventRequest;
 import com.stepcore.business.operations.controller.dto.CreateOsiEventRequest;
 import com.stepcore.business.operations.controller.dto.OsiEventResponse;
+import com.stepcore.business.operations.controller.dto.PortalAttachmentResponse;
+import com.stepcore.business.operations.controller.dto.PortalEventResponse;
 import com.stepcore.business.operations.domain.model.EventType;
 import com.stepcore.business.operations.domain.model.EventVisibility;
 import com.stepcore.business.operations.domain.model.OsiEvent;
@@ -117,6 +119,14 @@ public class OsiEventServiceImpl implements OsiEventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<PortalEventResponse> listForPortal(final Long osiId) {
+        final List<EventVisibility> clientVisible = List.of(EventVisibility.CLIENTE, EventVisibility.CLIENTE_CON_APROBACION);
+        return eventRepository.findByOsiIdAndEffectiveVisibilityInOrderByReceivedAtAsc(osiId, clientVisible)
+                .stream().map(this::toPortalResponse).toList();
+    }
+
+    @Override
     @Transactional
     public OsiEventResponse approveVisibility(final Long osiId, final Long vehicleId,
                                                final Long eventId, final Long approverUserId) {
@@ -173,6 +183,23 @@ public class OsiEventServiceImpl implements OsiEventService {
             case CLIENTE_CON_APROBACION -> EventVisibility.PENDIENTE_APROBACION;
             default -> defaultVis;
         };
+    }
+
+    private PortalEventResponse toPortalResponse(final OsiEvent e) {
+        final List<PortalAttachmentResponse> atts = attachmentRepository
+                .findByEventIdOrderByCreatedAtAsc(e.getId())
+                .stream()
+                .map(a -> new PortalAttachmentResponse(a.getId(), a.getFilename(), a.getUri(), a.getMimeType()))
+                .toList();
+        return new PortalEventResponse(
+                e.getId(),
+                eventTypeRepository.findById(e.getEventTypeId()).map(EventType::getName).orElse("?"),
+                e.getText(),
+                e.getCapturedAtLocal(),
+                e.getReceivedAt(),
+                e.getGeoLat(),
+                e.getGeoLng(),
+                atts);
     }
 
     private OsiEventResponse toResponse(final OsiEvent e) {
