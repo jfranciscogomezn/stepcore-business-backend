@@ -45,6 +45,10 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
 
+operations:
+  hc-validation:
+    block-cerrado-tracking: false
+
 logging:
   level:
     com.stepcore.business: INFO

@@ -1,6 +1,7 @@
 package com.stepcore.business.operations.service;
 
 import com.stepcore.business.exception.ChecklistViolationException;
+import com.stepcore.business.exception.HcValidationPendingException;
 import com.stepcore.business.exception.OsiNotFoundException;
 import com.stepcore.business.exception.VehicleNotFoundException;
 import com.stepcore.business.exception.VehicleRetiredException;
@@ -9,6 +10,8 @@ import com.stepcore.business.operations.controller.dto.AssignVehicleRequest;
 import com.stepcore.business.operations.controller.dto.OsiVehicleAssignmentResponse;
 import com.stepcore.business.operations.controller.dto.StateTransitionRequest;
 import com.stepcore.business.operations.controller.dto.UpdateGpsRequest;
+import com.stepcore.business.operations.controller.dto.UpdateHcValidationRequest;
+import com.stepcore.business.operations.domain.model.HcValidationStatus;
 import com.stepcore.business.operations.domain.model.OsiVehicleAssignment;
 import com.stepcore.business.operations.domain.model.OsiVehicleState;
 import com.stepcore.business.operations.domain.model.VehicleStatus;
@@ -17,9 +20,11 @@ import com.stepcore.business.operations.repository.OsiTransportDocumentRepositor
 import com.stepcore.business.operations.repository.OsiVehicleAssignmentRepository;
 import com.stepcore.business.operations.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +37,9 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
     private final VehicleRepository vehicleRepository;
     private final OsiVehicleStateMachine stateMachine;
     private final OsiTransportDocumentRepository documentRepository;
+
+    @Value("${operations.hc-validation.block-cerrado-tracking:false}")
+    private boolean blockCerradoTrackingOnHcPending;
 
     @Override
     @Transactional
@@ -69,6 +77,10 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
             if (docCount == 0) {
                 throw new ChecklistViolationException(
                         "Cannot close tracking: at least one transport document is required before closing assignment " + assignmentId);
+            }
+            if (blockCerradoTrackingOnHcPending
+                    && assignment.getHcValidationStatus() == HcValidationStatus.PENDIENTE) {
+                throw new HcValidationPendingException();
             }
         }
 
@@ -116,6 +128,21 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
                 }).toList();
     }
 
+    @Override
+    @Transactional
+    public OsiVehicleAssignmentResponse updateHcValidation(final Long assignmentId,
+                                                            final UpdateHcValidationRequest request,
+                                                            final Long validatorUserId) {
+        final OsiVehicleAssignment assignment = fetchOrThrow(assignmentId);
+        assignment.setHcValidationStatus(HcValidationStatus.valueOf(request.status()));
+        assignment.setHcValidationNotes(request.notes());
+        assignment.setHcValidatedByUserId(validatorUserId);
+        assignment.setHcValidatedAt(OffsetDateTime.now());
+        final String plate = vehicleRepository.findById(assignment.getVehicleId())
+                .map(v -> v.getPlate()).orElse("?");
+        return toResponse(assignmentRepository.save(assignment), plate);
+    }
+
     private OsiVehicleAssignment fetchOrThrow(final Long id) {
         return assignmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Assignment not found: " + id));
@@ -126,6 +153,10 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
                 a.getId(), a.getVehicleId(), plate,
                 a.getState().name(), a.getAssignedUserIds(),
                 a.getGpsProvider(), a.getGpsReferenceUrl(),
+                a.getHcValidationStatus() != null ? a.getHcValidationStatus().name() : "PENDIENTE",
+                a.getHcValidationNotes(),
+                a.getHcValidatedByUserId(),
+                a.getHcValidatedAt(),
                 a.getCreatedAt(), a.getUpdatedAt());
     }
 }

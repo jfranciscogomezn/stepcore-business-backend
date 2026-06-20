@@ -15,6 +15,8 @@ public final class AppPermissions {
     public static final String OPS_VEHICLES = "OPS_VEHICLES";
     public static final String OPS_OSI = "OPS_OSI";
     public static final String OPS_EVENT_TYPES = "OPS_EVENT_TYPES";
+    public static final String OPS_COMERCIAL = "OPS_COMERCIAL";
+    public static final String OPS_HC_VALIDADOR = "OPS_HC_VALIDADOR";
 
     private AppPermissions() {
     }

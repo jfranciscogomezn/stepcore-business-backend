@@ -5,6 +5,7 @@ import com.stepcore.business.operations.controller.dto.AssignVehicleRequest;
 import com.stepcore.business.operations.controller.dto.OsiVehicleAssignmentResponse;
 import com.stepcore.business.operations.controller.dto.StateTransitionRequest;
 import com.stepcore.business.operations.controller.dto.UpdateGpsRequest;
+import com.stepcore.business.operations.controller.dto.UpdateHcValidationRequest;
 
 import java.util.List;
 
@@ -17,6 +18,8 @@ public interface OsiVehicleAssignmentService {
     OsiVehicleAssignmentResponse addPersonnel(Long osiId, Long assignmentId, AddPersonnelRequest request);
 
     OsiVehicleAssignmentResponse updateGps(Long osiId, Long assignmentId, UpdateGpsRequest request);
+
+    OsiVehicleAssignmentResponse updateHcValidation(Long assignmentId, UpdateHcValidationRequest request, Long validatorUserId);
 
     List<OsiVehicleAssignmentResponse> listByOsi(Long osiId);
 }
