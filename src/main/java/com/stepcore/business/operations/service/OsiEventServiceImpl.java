@@ -3,6 +3,7 @@ package com.stepcore.business.operations.service;
 import com.stepcore.business.exception.EventTypeNotFoundException;
 import com.stepcore.business.exception.MaxAttachmentsExceededException;
 import com.stepcore.business.exception.OsiEventNotFoundException;
+import com.stepcore.business.notification.operations.OsiNotificationService;
 import com.stepcore.business.operations.controller.dto.AddAttachmentRequest;
 import com.stepcore.business.operations.controller.dto.AddCommentRequest;
 import com.stepcore.business.operations.controller.dto.AttachmentResponse;
@@ -20,8 +21,10 @@ import com.stepcore.business.operations.repository.EventTypeRepository;
 import com.stepcore.business.operations.repository.OsiEventAttachmentRepository;
 import com.stepcore.business.operations.repository.OsiEventCommentRepository;
 import com.stepcore.business.operations.repository.OsiEventRepository;
+import com.stepcore.business.operations.repository.OsiRepository;
 import com.stepcore.business.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OsiEventServiceImpl implements OsiEventService {
@@ -38,6 +42,8 @@ public class OsiEventServiceImpl implements OsiEventService {
     private final EventTypeRepository eventTypeRepository;
     private final OsiEventAttachmentRepository attachmentRepository;
     private final OsiEventCommentRepository commentRepository;
+    private final OsiRepository osiRepository;
+    private final OsiNotificationService osiNotificationService;
 
     @Override
     @Transactional
@@ -87,6 +93,16 @@ public class OsiEventServiceImpl implements OsiEventService {
                         .build());
             }
         }
+        if (visibility == EventVisibility.PENDIENTE_APROBACION) {
+            try {
+                final String osiNumber = osiRepository.findById(osiId)
+                        .map(o -> o.getOsiNumber()).orElse("#" + osiId);
+                osiNotificationService.notifyApprovalPending(osiId, osiNumber);
+            } catch (final Exception ex) {
+                log.warn("Failed to emit approval-pending notification for OSI {}: {}", osiId, ex.getMessage());
+            }
+        }
+
         return toResponse(event);
     }
 

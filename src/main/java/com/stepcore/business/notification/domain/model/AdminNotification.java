@@ -28,6 +28,8 @@ public class AdminNotification {
 
     public static final String TYPE_INCOMPLETE_TIME_RECORDS       = "INCOMPLETE_TIME_RECORDS";
     public static final String TYPE_CORRECTION_REQUEST_SUBMITTED  = "TIME_CORRECTION_REQUEST_SUBMITTED";
+    public static final String TYPE_OSI_APPROVAL_PENDING          = "OSI_APPROVAL_PENDING";
+    public static final String TYPE_OSI_HC_REJECTED               = "OSI_HC_REJECTED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -33,6 +33,7 @@ class OsiVehicleAssignmentServiceHcTest {
     @Mock private VehicleRepository vehicleRepository;
     @Mock private OsiVehicleStateMachine stateMachine;
     @Mock private OsiTransportDocumentRepository documentRepository;
+    @Mock private com.stepcore.business.notification.operations.OsiNotificationService osiNotificationService;
 
     private OsiVehicleAssignmentServiceImpl service;
 
@@ -50,7 +51,7 @@ class OsiVehicleAssignmentServiceHcTest {
     @BeforeEach
     void setUp() {
         service = new OsiVehicleAssignmentServiceImpl(
-                assignmentRepository, osiRepository, vehicleRepository, stateMachine, documentRepository);
+                assignmentRepository, osiRepository, vehicleRepository, stateMachine, documentRepository, osiNotificationService);
     }
 
     @Test

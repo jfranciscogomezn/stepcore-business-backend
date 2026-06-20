@@ -5,6 +5,7 @@ import com.stepcore.business.exception.HcValidationPendingException;
 import com.stepcore.business.exception.OsiNotFoundException;
 import com.stepcore.business.exception.VehicleNotFoundException;
 import com.stepcore.business.exception.VehicleRetiredException;
+import com.stepcore.business.notification.operations.OsiNotificationService;
 import com.stepcore.business.operations.controller.dto.AddPersonnelRequest;
 import com.stepcore.business.operations.controller.dto.AssignVehicleRequest;
 import com.stepcore.business.operations.controller.dto.OsiVehicleAssignmentResponse;
@@ -20,6 +21,7 @@ import com.stepcore.business.operations.repository.OsiTransportDocumentRepositor
 import com.stepcore.business.operations.repository.OsiVehicleAssignmentRepository;
 import com.stepcore.business.operations.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentService {
@@ -37,6 +40,7 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
     private final VehicleRepository vehicleRepository;
     private final OsiVehicleStateMachine stateMachine;
     private final OsiTransportDocumentRepository documentRepository;
+    private final OsiNotificationService osiNotificationService;
 
     @Value("${operations.hc-validation.block-cerrado-tracking:false}")
     private boolean blockCerradoTrackingOnHcPending;
@@ -134,13 +138,26 @@ public class OsiVehicleAssignmentServiceImpl implements OsiVehicleAssignmentServ
                                                             final UpdateHcValidationRequest request,
                                                             final Long validatorUserId) {
         final OsiVehicleAssignment assignment = fetchOrThrow(assignmentId);
-        assignment.setHcValidationStatus(HcValidationStatus.valueOf(request.status()));
+        final HcValidationStatus newStatus = HcValidationStatus.valueOf(request.status());
+        assignment.setHcValidationStatus(newStatus);
         assignment.setHcValidationNotes(request.notes());
         assignment.setHcValidatedByUserId(validatorUserId);
         assignment.setHcValidatedAt(OffsetDateTime.now());
         final String plate = vehicleRepository.findById(assignment.getVehicleId())
                 .map(v -> v.getPlate()).orElse("?");
-        return toResponse(assignmentRepository.save(assignment), plate);
+        final OsiVehicleAssignment saved = assignmentRepository.save(assignment);
+
+        if (newStatus == HcValidationStatus.RECHAZADO) {
+            try {
+                final String osiNumber = osiRepository.findById(assignment.getOsiId())
+                        .map(o -> o.getOsiNumber()).orElse("#" + assignment.getOsiId());
+                osiNotificationService.notifyHcRejected(assignment.getOsiId(), osiNumber, assignmentId);
+            } catch (final Exception ex) {
+                log.warn("Failed to emit HC-rejected notification for OSI {}: {}", assignment.getOsiId(), ex.getMessage());
+            }
+        }
+
+        return toResponse(saved, plate);
     }
 
     private OsiVehicleAssignment fetchOrThrow(final Long id) {
