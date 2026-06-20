@@ -36,13 +36,15 @@ class OsiEventServiceTest {
     @Mock private EventTypeRepository eventTypeRepository;
     @Mock private OsiEventAttachmentRepository attachmentRepository;
     @Mock private OsiEventCommentRepository commentRepository;
+    @Mock private com.stepcore.business.operations.repository.OsiRepository osiRepository;
+    @Mock private com.stepcore.business.notification.operations.OsiNotificationService osiNotificationService;
     private OsiEventServiceImpl service;
 
     @BeforeEach
     void setUp() {
         TenantContext.setTenantId(2L);
         service = new OsiEventServiceImpl(eventRepository, eventTypeRepository,
-                attachmentRepository, commentRepository);
+                attachmentRepository, commentRepository, osiRepository, osiNotificationService);
     }
 
     @AfterEach
@@ -75,7 +77,8 @@ class OsiEventServiceTest {
         final OsiEvent saved = buildEvent(2L, EventVisibility.PENDIENTE_APROBACION);
         when(eventRepository.save(any())).thenReturn(saved);
         when(attachmentRepository.findByEventIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(eventTypeRepository.findById(2L)).thenReturn(Optional.of(et));
+        when(eventTypeRepository.findById(5L)).thenReturn(Optional.of(et));
+        when(osiRepository.findById(10L)).thenReturn(Optional.empty());
 
         final CreateOsiEventRequest req = new CreateOsiEventRequest(7L, "event text", null, null, null, null, null, null);
         final var result = service.create(10L, 20L, req, 99L, key);
